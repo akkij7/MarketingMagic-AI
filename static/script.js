@@ -19,7 +19,7 @@ Generate a 3-day content calendar, with two posts maximum for each day that incl
 - A creative post caption tailored to the platform. Include hashtags.
 - Product photography suggestions.
 
-Format the output as a markdown table. Today’s date is ${formattedDate}, and posts should start from tomorrow in the format "19 SEP (10:00 AM)".
+Format the output as a markdown table. Today’s date is ${formattedDate}, and posts should start from tomorrow in the format "DD MMM (HH:MM AM/PM)".
 Please only give a single table and no notes or anything similar, just what we asked, no additional information. NO PLACEHOLDERS.
 
 Example format:
