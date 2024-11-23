@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="shortcut icon" type="image/x-icon" href={{ url_for(
+    "static", filename="favicon.ico") }}>
+
+    <title>Social Media Campaign Generator</title>
+    <style>
+        /* Base Styles */
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+        }
+        /* Container */
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        /* Form Styles */
+        form {
+            background-color: #fff;
+            padding: 40px 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 500px;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        .step {
+            display: none;
+        }
+        .step.active {
+            display: block;
+        }
+        /* Form Fields */
+        .form-group {
+            margin-bottom: 25px;
+            position: relative;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            font-size: 18px;
+            color: #555;
+            text-align: center;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 14px 20px;
+            border: 1px solid #ccc;
+            border-radius: 30px;
+            font-size: 16px;
+            text-align: center;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        input[type="text"]:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 5px rgba(0,123,255,0.5);
+        }
+        /* Buttons */
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            gap: 10px;
+            width: 100%;
+        }
+        .navigation-buttons button {
+            flex: 1;
+        }
+        button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 30px;
+            padding: 14px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+        /* Custom Select */
+        .custom-select-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        .custom-select {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        .custom-select-trigger {
+            position: relative;
+            display: block;
+            width: 100%;
+            padding: 14px 20px;
+            font-size: 16px;
+            color: #555;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 30px;
+            cursor: pointer;
+            text-align: center;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        .custom-select-trigger:after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border: 6px solid transparent;
+            border-top-color: #555;
+            transition: transform 0.3s ease;
+        }
+        .custom-select-trigger.open:after {
+            transform: translateY(-50%) rotate(180deg);
+        }
+        .custom-options {
+            position: absolute;
+            display: none;
+            top: calc(100% + 5px);
+            left: 0;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            z-index: 999;
+        }
+        .custom-options.open {
+            display: block;
+        }
+        .custom-option {
+            padding: 10px 20px;
+            font-size: 16px;
+            color: #555;
+            cursor: pointer;
+            text-align: left;
+        }
+        .custom-option:hover {
+            background-color: #f0f2f5;
+        }
+        /* Multi-select */
+        .multi-select-trigger {
+            text-align: center;
+        }
+        .multi-select-option {
+            display: flex;
+            align-items: center;
+        }
+        .multi-select-option label {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            cursor: pointer;
+        }
+        .multi-select-option input {
+            margin-right: 10px;
+            margin-left: 0;
+        }
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Accessibility */
+        input:focus,
+        .custom-select-trigger:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 5px rgba(0,123,255,0.5);
+        }
+        /* Responsive */
+        @media (max-width: 500px) {
+            form {
+                padding: 30px 20px;
+            }
+            h1 {
+                font-size: 22px;
+            }
+            .navigation-buttons {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .navigation-buttons button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <form id="campaignForm" method="POST" action="/generate">
+        <h1>Social Media Campaign Generator</h1>
+        <!-- Step 1 -->
+        <div class="step active" id="step-1">
+            <div class="form-group">
+                <label for="brandName">1. What is your Brand Name?</label>
+                <input type="text" id="brandName" name="brandName" required aria-required="true" aria-label="Brand Name"
+                       placeholder="e.g., The Flying Spaghetti Factory">
+            </div>
+            <div class="navigation-buttons">
+                <button type="button" onclick="nextStep()">Next</button>
+            </div>
+        </div>
+        <!-- Step 2 -->
+        <div class="step" id="step-2">
+            <div class="form-group">
+                <label for="whatYouSell">2. What Do You Sell?</label>
+                <input type="text" id="whatYouSell" name="whatYouSell" required aria-required="true"
+                       aria-label="What You Sell" placeholder="e.g., Time-traveling toasters">
+            </div>
+            <div class="navigation-buttons">
+                <button type="button" onclick="prevStep()">Back</button>
+                <button type="button" onclick="nextStep()">Next</button>
+            </div>
+        </div>
+        <!-- Step 3 -->
+        <div class="step" id="step-3">
+            <div class="form-group">
+                <label for="targetAudience">3. Who is Your Target Audience?</label>
+                <input type="text" id="targetAudience" name="targetAudience" required aria-required="true"
+                       aria-label="Target Audience" placeholder="e.g., Left-handed skydivers">
+            </div>
+            <div class="navigation-buttons">
+                <button type="button" onclick="prevStep()">Back</button>
+                <button type="button" onclick="nextStep()">Next</button>
+            </div>
+        </div>
+        <!-- Step 4 -->
+        <div class="step" id="step-4">
+            <div class="form-group">
+                <label for="campaignGoal">4. What is Your Campaign Goal?</label>
+                <div class="custom-select-wrapper">
+                    <div class="custom-select">
+                        <div class="custom-select-trigger multi-select-trigger" tabindex="0">Select goals</div>
+                        <div class="custom-options">
+                            <div class="custom-option multi-select-option">
+                                <label>
+                                    <input type="checkbox" value="Brand Awareness"> Brand Awareness
+                                </label>
+                            </div>
+                            <div class="custom-option multi-select-option">
+                                <label>
+                                    <input type="checkbox" value="Lead Generation"> Lead Generation
+                                </label>
+                            </div>
+                            <div class="custom-option multi-select-option">
+                                <label>
+                                    <input type="checkbox" value="Sales Promotion"> Sales Promotion
+                                </label>
+                            </div>
+                            <div class="custom-option multi-select-option">
+                                <label>
+                                    <input type="checkbox" value="Event Promotion"> Event Promotion
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" id="campaignGoalInput" name="campaignGoal" required aria-required="true">
+            </div>
+            <div class="navigation-buttons">
+                <button type="button" onclick="prevStep()">Back</button>
+                <button type="button" onclick="nextStep()">Next</button>
+            </div>
+        </div>
+        <!-- Step 5 -->
+        <div class="step" id="step-5">
+            <div class="form-group">
+                <label for="platforms">5. Choose Social Media Platforms</label>
+                <div class="custom-select-wrapper">
+                    <div class="custom-select">
+                        <div class="custom-select-trigger multi-select-trigger" tabindex="0">Select platforms</div>
+                        <div class="custom-options">
+                            <div class="custom-option multi-select-option">
+                                <label>
+                                    <input type="checkbox" value="Facebook"> Facebook
+                                </label>
+                            </div>
+                            <div class="custom-option multi-select-option">
+                                <label>
+                                    <input type="checkbox" value="Instagram"> Instagram
+                                </label>
+                            </div>
+                            <div class="custom-option multi-select-option">
+                                <label>
+                                    <input type="checkbox" value="Twitter"> Twitter
+                                </label>
+                            </div>
+                            <div class="custom-option multi-select-option">
+                                <label>
+                                    <input type="checkbox" value="LinkedIn"> LinkedIn
+                                </label>
+                            </div>
+                            <div class="custom-option multi-select-option">
+                                <label>
+                                    <input type="checkbox" value="Pinterest"> Pinterest
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" id="platformsInput" name="platforms" required aria-required="true">
+            </div>
+            <div class="navigation-buttons">
+                <button type="button" onclick="prevStep()">Back</button>
+                <button type="submit">Generate Campaign</button>
+            </div>
+        </div>
+    </form>
+    <div id="response"
+         style="display: none; margin-top: 20px; padding: 20px; background-color: #fff; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);"></div>
+
+</div>
+
+<script>
+    // Multi-step form navigation
+    let currentStep = 0;
+    const steps = document.querySelectorAll('.step');
+
+    function showStep(index) {
+        steps.forEach((step, i) => {
+            step.classList.toggle('active', i === index);
+        });
+    }
+
+    function nextStep() {
+        if (currentStep < steps.length - 1) {
+            currentStep++;
+            showStep(currentStep);
+        }
+    }
+
+    function prevStep() {
+        if (currentStep > 0) {
+            currentStep--;
+            showStep(currentStep);
+        }
+    }
+
+    // Handle Enter key to trigger 'Next' button
+    steps.forEach(function(step, index) {
+        const inputs = step.querySelectorAll('input');
+        inputs.forEach(function(input) {
+            input.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    if (index < steps.length - 1) {
+                        nextStep();
+                    } else {
+                        // Last step, submit the form
+                        document.getElementById('campaignForm').submit();
+                    }
+                }
+            });
+        });
+    });
+
+    // Custom select for multi-select
+    const customSelectWrappers = document.querySelectorAll('.custom-select-wrapper');
+
+    customSelectWrappers.forEach(function(wrapper) {
+        const selectTrigger = wrapper.querySelector('.custom-select-trigger');
+        const customOptions = wrapper.querySelector('.custom-options');
+        const hiddenInput = wrapper.parentElement.querySelector('input[type="hidden"]');
+
+        // Toggle dropdown open/close
+        selectTrigger.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (selectTrigger.classList.contains('open')) {
+                selectTrigger.classList.remove('open');
+                customOptions.classList.remove('open');
+            } else {
+                closeAllCustomSelects();
+                selectTrigger.classList.add('open');
+                customOptions.classList.add('open');
+            }
+        });
+
+        // Update multi-select
+        const updateMultiSelect = () => {
+            const selectedOptions = [];
+            customOptions.querySelectorAll('input[type="checkbox"]').forEach(function(checkbox) {
+                if (checkbox.checked) {
+                    selectedOptions.push(checkbox.value);
+                }
+            });
+            hiddenInput.value = selectedOptions.join(',');
+            selectTrigger.textContent = selectedOptions.length > 0 ? selectedOptions.join(', ') : 'Select options';
+        };
+
+        // Handle checkbox changes
+        customOptions.querySelectorAll('input[type="checkbox"]').forEach(function(checkbox) {
+            checkbox.addEventListener('change', updateMultiSelect);
+        });
+
+        // Prevent dropdown from closing when clicking inside
+        customOptions.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+
+        // Handle Enter key in custom selects
+        selectTrigger.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                if (customOptions.classList.contains('open')) {
+                    customOptions.classList.remove('open');
+                    selectTrigger.classList.remove('open');
+                    nextStep();
+                } else {
+                    customOptions.classList.add('open');
+                    selectTrigger.classList.add('open');
+                }
+            }
+        });
+    });
+
+    // Close all custom selects when clicking outside
+    document.addEventListener('click', function() {
+        closeAllCustomSelects();
+    });
+
+    function closeAllCustomSelects() {
+        document.querySelectorAll('.custom-select-trigger').forEach(function(trigger) {
+            trigger.classList.remove('open');
+        });
+        document.querySelectorAll('.custom-options').forEach(function(options) {
+            options.classList.remove('open');
+        });
+    }
+</script>
+<!--<script src="static/script.js"></script>-->
+
+</body>
+</html>

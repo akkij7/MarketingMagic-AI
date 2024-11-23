@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Content Calendar</title>
+    <link rel="shortcut icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <style>
+        /* Style for the response container */
+        #response {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        #response h2 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        #response p {
+            font-size: 16px;
+            line-height: 1.5;
+            color: #555;
+        }
+
+        #response table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        #response table, #response th, #response td {
+            border: 1px solid #ddd;
+        }
+
+        #response th, #response td {
+            padding: 12px;
+            text-align: left;
+        }
+
+        #response th {
+            background-color: #f0f2f5;
+            font-weight: bold;
+        }
+
+        /* Modern button styling */
+        #download-pdf-button {
+            display: none; /* Initially hidden */
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 123, 255, 0.3);
+            transition: background-color 0.3s ease;
+            margin-bottom: 20px; /* Add margin below the button */
+        }
+
+        #download-pdf-button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Centered loader styling */
+        #loader-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(255, 255, 255, 0.8);
+            z-index: 1000;
+            flex-direction: column;
+        }
+
+        /* Larger GIF styling */
+        #loader img {
+            width: 200px;
+            height: 200px;
+        }
+
+        #loader-text {
+            margin-top: 20px;
+            font-size: 20px;
+            color: #555;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+            text-align: center;
+        }
+
+        /* Animation for text */
+        @keyframes pulse {
+            0% { color: #555; }
+            50% { color: #888; }
+            100% { color: #555; }
+        }
+    </style>
+
+    <!-- Include jsPDF Library -->
+    <!-- Use latest versions for better compatibility -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Include html2canvas Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Include html2pdf.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <!-- Centered Loader Container -->
+    <div id="loader-container">
+        <div id="loader">
+            <img src="{{ url_for('static', filename='loader.gif') }}" alt="Loading...">
+            <div id="loader-text">Preparing your unique content calendar...</div>
+        </div>
+    </div>
+
+    <!-- Response Container -->
+    <div id="response" style="display: none;">
+        <!-- Modern Download as PDF button -->
+        <button id="download-pdf-button">Download Content Calendar as PDF</button>
+        <!-- The content will be rendered here -->
+        <div id="content">
+            <!-- Generated content will be inserted here -->
+        </div>
+    </div>
+</div>
+
+<!-- Include external libraries -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@2.4.0/dist/purify.min.js"></script>
+
+<!-- Define formData in the HTML using template syntax -->
+<script>
+    // Safely pass form data to JavaScript
+    const formData = {{ form_data | tojson | safe }};
+</script>
+
+<!-- Include your generate.js script -->
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+
+<script>
+    // Define loader messages
+    const loaderMessages = [
+        'Crafting engaging posts just for you...',
+        'Thinking of creative captions...',
+        'Almost ready to boost your campaign...',
+        'Analyzing your audience preferences...',
+        'Adding a sprinkle of creativity...',
+        'Designing stunning visuals...',
+        'Choosing the perfect hashtags...',
+        'Bringing your brand’s voice to life...',
+        'Optimizing posts for engagement...',
+        'Generating unique content ideas...',
+        'Creating engaging story lines...',
+        'Tailoring posts for your audience...',
+        'Researching trending topics...',
+        'Personalizing your calendar...',
+        'Refining the final touches...'
+    ];
+
+    // Function to get a unique random message each time
+    let lastMessageIndex = -1;
+    function getRandomMessage() {
+        let index;
+        do {
+            index = Math.floor(Math.random() * loaderMessages.length);
+        } while (index === lastMessageIndex);
+        lastMessageIndex = index;
+        return loaderMessages[index];
+    }
+
+    // Display random loader message every 2 seconds
+    const loaderTextElement = document.getElementById('loader-text');
+    loaderTextElement.innerText = getRandomMessage(); // Start with a random message
+    const loaderInterval = setInterval(() => {
+        loaderTextElement.innerText = getRandomMessage();
+    }, 2000);
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const responseElement = document.getElementById('response');
+        const contentElement = document.getElementById('content');
+        const loaderContainer = document.getElementById('loader-container');
+        const downloadButton = document.getElementById('download-pdf-button');
+
+        // Listen for custom 'contentLoaded' event
+        responseElement.addEventListener('contentLoaded', function() {
+            clearInterval(loaderInterval); // Stop updating loader messages
+            loaderContainer.style.display = 'none'; // Hide loader
+            responseElement.style.display = 'block'; // Show content
+            downloadButton.style.display = 'block'; // Show the Download as PDF button
+        });
+
+        // Add click event listener to the download button
+        downloadButton.addEventListener('click', function() {
+            // Generate PDF when the button is clicked
+            generatePDF();
+        });
+    });
+
+    function generatePDF() {
+        // Use html2pdf.js to generate PDF from the content element (excluding the button)
+        const content = document.getElementById('content');
+
+        // Define options for html2pdf
+        const options = {
+            margin:       10,
+            filename:     'ContentCalendar.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2 },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        // Include the styles in the PDF
+        const clonedContent = content.cloneNode(true);
+
+        // Create a style element with the necessary CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 20px;
+            }
+            th, td {
+                border: 1px solid #ddd;
+                padding: 12px;
+                text-align: left;
+            }
+            th {
+                background-color: #f0f2f5;
+                font-weight: bold;
+            }
+            p {
+                font-size: 16px;
+                line-height: 1.5;
+                color: #555;
+            }
+        `;
+        // Insert the style into the cloned content
+        clonedContent.prepend(style);
+
+        // Generate the PDF
+        html2pdf().set(options).from(clonedContent).save();
+    }
+</script>
+</body>
+</html>
